@@ -1,0 +1,164 @@
+/* --- Layout generale --- */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #111;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+main.container {
+  width: 95%;
+  max-width: 600px;
+  margin: 10px auto;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+/* --- Titoli --- */
+h1, h2 {
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* --- Pulsanti generali --- */
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+button:hover {
+  background: #3399ff;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Pulsante "torna al menu" --- */
+.back-btn {
+  background: #444;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+.back-btn:hover {
+  background: #666;
+}
+
+/* --- Lista canzoni --- */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* --- Canzoni (layout principale) --- */
+.song {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #222;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  flex-wrap: wrap; /* solo se serve */
+}
+
+.song strong {
+  font-size: 17px;
+}
+
+.song div:first-child {
+  flex: 1 1 auto;
+  margin-right: 8px;
+  min-width: 150px;
+}
+
+.song button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.song button:hover {
+  background: #3399ff;
+}
+
+.song .count {
+  margin-left: 6px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* --- Flash per aggiornamenti --- */
+.flash {
+  animation: flash-bg 0.5s ease;
+}
+@keyframes flash-bg {
+  0% { background-color: #333; }
+  100% { background-color: #222; }
+}
+
+/* --- Form admin --- */
+#add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#add-form input {
+  border-radius: 10px;
+  border: none;
+  padding: 10px;
+  font-size: 15px;
+  background: #333;
+  color: white;
+}
+#add-form button {
+  align-self: center;
+  width: 50%;
+}
+
+/* --- Mobile optimization --- */
+@media (max-width: 600px) {
+  main.container {
+    width: 98%;
+    padding: 10px;
+  }
+
+  button, .back-btn {
+    font-size: 15px;
+    padding: 8px 12px;
+  }
+
+  .song {
+    font-size: 15px;
+  }
+
+  .song strong {
+    font-size: 16px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+}
