@@ -29,8 +29,9 @@ h1, h2 {
 /* --- Input ricerca --- */
 #search {
   width: 100%;
-  padding: 8px 12px;
-  font-size: 14px;
+  max-width: 100%;
+  padding: 12px 14px;   /* più grande e leggibile */
+  font-size: 16px;
   border-radius: 10px;
   border: none;
   background: #333;
@@ -89,17 +90,22 @@ button:disabled {
   padding: 10px 14px;
   font-size: 16px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  flex-wrap: wrap; /* solo se serve */
+  flex-wrap: wrap;
 }
 
 .song strong {
-  font-size: 17px;
+  font-size: 16px;   /* leggermente più piccolo */
+}
+
+.song .artist {
+  font-size: 14px;
+  opacity: 0.9;
 }
 
 .song div:first-child {
   flex: 1 1 auto;
-  margin-right: 8px;
-  min-width: 150px;
+  margin-right: 6px;  /* più compatto */
+  min-width: 0;
 }
 
 .song button {
@@ -164,7 +170,7 @@ button:disabled {
   }
 
   .song {
-    font-size: 40px;
+    font-size: 15px;
     flex-wrap: wrap;
   }
 
@@ -177,7 +183,7 @@ button:disabled {
   }
 }
 
-/* --- Mobile specific (smartphone stretto) --- */
+/* --- Smartphone stretto --- */
 @media (max-width: 480px) {
   .song {
     flex-direction: row;
@@ -192,18 +198,18 @@ button:disabled {
   }
 
   .song button {
-    padding: 5px 8px;
-    font-size: 13px;
+    padding: 8px 10px;
+    font-size: 15px;
   }
 
   .song .count {
-    font-size: 13px;
+    font-size: 14px;
     margin-left: 6px;
   }
 
   #search {
-    font-size: 13px;
-    padding: 6px 10px;
+    font-size: 17px;
+    padding: 10px 12px;
   }
 
   h1 {
