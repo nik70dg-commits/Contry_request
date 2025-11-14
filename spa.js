@@ -6,6 +6,9 @@ const searchInput = document.getElementById('search');
 let currentSongs = [];
 let hiddenIds = [];
 
+// Memorizza le richieste lato client per limitare per IP/browser
+let requestedSongs = JSON.parse(localStorage.getItem('requestedSongs')) || [];
+
 async function loadSongs() {
   // Prendi le canzoni nascoste
   const { data: hiddenData } = await supabase.from('hidden_songs').select('*');
@@ -35,10 +38,10 @@ function renderSongs() {
   );
 
   container.innerHTML = filtered.map(s => `
-    <div class="song">
+    <div class="song ${s.requests > 0 ? 'requested' : ''} ${requestedSongs.includes(s.id) ? 'already-requested' : ''}">
       <div><strong>${s.title}</strong>${s.artist ? ' – ' + s.artist : ''}</div>
       <div>
-        <button data-id="${s.id}">Richiedi</button>
+        <button data-id="${s.id}" ${requestedSongs.includes(s.id) ? 'disabled' : ''}>${requestedSongs.includes(s.id) ? 'Richiesta inviata' : 'Richiedi'}</button>
         <span class="count">(${s.requests})</span>
       </div>
     </div>
@@ -46,10 +49,28 @@ function renderSongs() {
 
   container.querySelectorAll('button[data-id]').forEach(btn => {
     btn.onclick = async () => {
-      const id = btn.dataset.id;
+      const id = parseInt(btn.dataset.id);
+
+      // Limite richieste lato client: max 1 richiesta per canzone
+      if (requestedSongs.includes(id)) return;
+
       btn.disabled = true;
-      await supabase.from('requests').insert([{ song_id: id }]);
-      btn.disabled = false;
+      btn.textContent = 'Inviando...';
+
+      const { error } = await supabase.from('requests').insert([{ song_id: id }]);
+      if (error) {
+        console.error('Errore richiesta:', error);
+        btn.disabled = false;
+        btn.textContent = 'Richiedi';
+        return;
+      }
+
+      // Aggiorna localStorage
+      requestedSongs.push(id);
+      localStorage.setItem('requestedSongs', JSON.stringify(requestedSongs));
+
+      btn.textContent = '✓ Richiesta inviata';
+      loadSongs(); // aggiorna lista
     };
   });
 }
