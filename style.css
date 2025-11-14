@@ -240,3 +240,15 @@ button:disabled {
 .song.already-requested button:hover {
   background-color: #888; /* non cambia al passaggio del mouse */
 }
+/* Richiesta da questo utente */
+.song.requested-user {
+  background: #004080;
+  border: 1px solid #66aaff;
+}
+
+/* Richiesta da altri */
+.song.requested-others {
+  background: #123d12;
+  border: 1px solid #4CAF50;
+}
+
