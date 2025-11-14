@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<title>Richiesta Canzoni</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Richieste DJ</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Richiedi le tue canzoni</h1>
+  <div class="container">
+    <header>
+      <h1>🎵 Richieste DJ</h1>
+      <input type="text" id="search" placeholder="Cerca canzone o artista...">
+    </header>
+    
+    <div id="song-list">Caricamento...</div>
+  </div>
 
-<input type="text" id="search" placeholder="Cerca una canzone...">
-
-<div id="song-list"></div>
-
-<script type="module" src="spa.js"></script>
+  <!-- Carica Supabase da CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="public.js"></script>
 </body>
 </html>
