@@ -26,6 +26,19 @@ h1, h2 {
   font-weight: 600;
 }
 
+/* --- Input ricerca --- */
+#search {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: none;
+  background: #333;
+  color: white;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
 /* --- Pulsanti generali --- */
 button {
   background: #007bff;
@@ -138,7 +151,7 @@ button:disabled {
   width: 50%;
 }
 
-/* --- Mobile optimization --- */
+/* --- Mobile optimization (tablet e smartphone) --- */
 @media (max-width: 600px) {
   main.container {
     width: 98%;
@@ -151,7 +164,8 @@ button:disabled {
   }
 
   .song {
-    font-size: 15px;
+    font-size: 40px;
+    flex-wrap: wrap;
   }
 
   .song strong {
@@ -160,5 +174,39 @@ button:disabled {
 
   h1 {
     font-size: 22px;
+  }
+}
+
+/* --- Mobile specific (smartphone stretto) --- */
+@media (max-width: 480px) {
+  .song {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .song div:first-child {
+    flex: 1;
+    margin-right: 10px;
+    min-width: 0;
+  }
+
+  .song button {
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+
+  .song .count {
+    font-size: 13px;
+    margin-left: 6px;
+  }
+
+  #search {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  h1 {
+    font-size: 20px;
   }
 }
