@@ -216,3 +216,27 @@ button:disabled {
     font-size: 20px;
   }
 }
+
+/* --- Canzoni già richieste da altri utenti --- */
+.song.requested {
+  background-color: #2a6f2a; /* verde scuro */
+  border: 2px solid #4CAF50;
+}
+
+/* --- Canzoni già richieste dal client corrente --- */
+.song.already-requested {
+  background-color: #555; /* grigio scuro */
+  border: 2px dashed #999;
+}
+
+/* --- Hover e pulsanti per canzoni evidenziate --- */
+.song.requested button,
+.song.already-requested button {
+  background-color: #888;
+  cursor: not-allowed;
+}
+
+.song.requested button:hover,
+.song.already-requested button:hover {
+  background-color: #888; /* non cambia al passaggio del mouse */
+}
