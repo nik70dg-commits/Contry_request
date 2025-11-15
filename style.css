@@ -315,5 +315,95 @@ button:disabled {
     width: 100%;
   }
 }
+/* Form richiesta custom inline */
+.custom-request-form {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
+  border-radius: 12px;
+  border: 2px solid rgba(240, 147, 251, 0.3);
+}
+
+#custom-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+#custom-title,
+#custom-artist {
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: border 0.3s;
+}
+
+#custom-title:focus,
+#custom-artist:focus {
+  outline: none;
+  border-color: #f5576c;
+  background: white;
+}
+
+#custom-title::placeholder {
+  color: #f5576c;
+  font-weight: 500;
+}
+
+.quick-submit {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.quick-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+}
+
+.quick-submit:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Animazione evidenziazione per nuova richiesta */
+@keyframes highlightPulse {
+  0%, 100% {
+    background: linear-gradient(to right, rgba(245, 87, 108, 0.3), transparent);
+    box-shadow: 0 0 20px rgba(245, 87, 108, 0.5);
+  }
+  50% {
+    background: linear-gradient(to right, rgba(245, 87, 108, 0.5), transparent);
+    box-shadow: 0 0 30px rgba(245, 87, 108, 0.7);
+  }
+}
+
+.song.custom-request.highlight {
+  animation: highlightPulse 1.5s ease-in-out 3;
+  border-left: 4px solid #f5576c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  #custom-form {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .quick-submit {
+    width: 100%;
+  }
+}
 
 
