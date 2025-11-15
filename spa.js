@@ -2,50 +2,37 @@ import { supabase } from './supabase.js';
 
 const container = document.getElementById('song-list');
 const searchInput = document.getElementById('search');
-const customRequestBtn = document.getElementById('custom-request-btn');
-const customModal = document.getElementById('custom-modal');
 const customForm = document.getElementById('custom-form');
-const closeModal = document.querySelector('.close');
+const customTitleInput = document.getElementById('custom-title');
+const customArtistInput = document.getElementById('custom-artist');
 
 // Stato locale
 let myRequested = JSON.parse(localStorage.getItem("my_requested_songs") || "[]");
 let myCustomRequested = JSON.parse(localStorage.getItem("my_custom_requested") || "[]");
 let currentSongs = [];
 let hiddenIds = [];
+let lastCustomRequestId = null; // Per evidenziare l'ultima richiesta
 
 // Configurazione
 const MAX_REQUESTS_PER_USER = 50;
-
-// ====== MODAL GESTIONE ======
-customRequestBtn.addEventListener('click', () => {
-  customModal.style.display = 'block';
-});
-
-closeModal.addEventListener('click', () => {
-  customModal.style.display = 'none';
-});
-
-window.addEventListener('click', (e) => {
-  if (e.target === customModal) {
-    customModal.style.display = 'none';
-  }
-});
 
 // ====== FORM RICHIESTA CUSTOM ======
 customForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const title = document.getElementById('custom-title').value.trim();
-  const artist = document.getElementById('custom-artist').value.trim();
+  const title = customTitleInput.value.trim();
+  const artist = customArtistInput.value.trim();
   
   if (!title) {
-    alert('Inserisci almeno il titolo della canzone');
+    customTitleInput.focus();
     return;
   }
 
   // Controlla limite richieste
   const totalRequests = myRequested.length + myCustomRequested.length;
   if (totalRequests >= MAX_REQUESTS_PER_USER) {
+    customTitleInput.value = '';
+    customArtistInput.value = '';
     alert(`Hai raggiunto il limite massimo di ${MAX_REQUESTS_PER_USER} richieste.`);
     return;
   }
@@ -55,7 +42,7 @@ customForm.addEventListener('submit', async (e) => {
   try {
     const submitBtn = customForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
-    submitBtn.textContent = '⏳ Invio in corso...';
+    submitBtn.textContent = '⏳';
 
     // Inserisci richiesta con song_id NULL e dati custom
     const { data, error } = await supabase
@@ -71,27 +58,37 @@ customForm.addEventListener('submit', async (e) => {
 
     console.log('✅ Richiesta custom inviata:', data);
     
-    // Salva in locale
-    const requestId = `custom_${data[0].id}`;
-    myCustomRequested.push(requestId);
+    // Salva in locale e memorizza ID per evidenziare
+    const requestId = data[0].id;
+    lastCustomRequestId = requestId;
+    myCustomRequested.push(`custom_${requestId}`);
     localStorage.setItem("my_custom_requested", JSON.stringify(myCustomRequested));
     
     // Reset form
-    customForm.reset();
-    customModal.style.display = 'none';
-    
-    alert('✅ Richiesta inviata al DJ!\n\nIl DJ vedrà la tua richiesta nella sua console.');
+    customTitleInput.value = '';
+    customArtistInput.value = '';
     
     submitBtn.disabled = false;
-    submitBtn.textContent = '📤 Invia richiesta al DJ';
+    submitBtn.textContent = '➕ Richiedi';
+    
+    // Ricarica e mostra evidenziata (dopo 200ms per dare tempo al DB)
+    setTimeout(() => {
+      loadSongs();
+      // Rimuovi evidenziazione dopo 5 secondi
+      setTimeout(() => {
+        lastCustomRequestId = null;
+        renderSongs();
+      }, 5000);
+    }, 200);
 
   } catch (error) {
     console.error('❌ Errore invio richiesta:', error);
-    alert('Errore durante l\'invio: ' + error.message);
+    customTitleInput.value = '';
+    customArtistInput.value = '';
     
     const submitBtn = customForm.querySelector('button[type="submit"]');
     submitBtn.disabled = false;
-    submitBtn.textContent = '📤 Invia richiesta al DJ';
+    submitBtn.textContent = '➕ Richiedi';
   }
 });
 
@@ -185,6 +182,7 @@ const requestsChannel = supabase
         console.log("🧽 RESET DJ — pulizia stato locale");
         myRequested = [];
         myCustomRequested = [];
+        lastCustomRequestId = null;
         localStorage.removeItem("my_requested_songs");
         localStorage.removeItem("my_custom_requested");
       }
