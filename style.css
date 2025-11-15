@@ -157,7 +157,7 @@ button:disabled {
   width: 50%;
 }
 
-/* --- Mobile optimization (tablet e smartphone) --- */
+/* --- Mobile optimization --- */
 @media (max-width: 600px) {
   main.container {
     width: 98%;
@@ -167,6 +167,25 @@ button:disabled {
   button, .back-btn {
     font-size: 15px;
     padding: 8px 12px;
+  }
+
+  #custom-request-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  #custom-request-box input {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  #custom-request-box button {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px;
   }
 
   .song {
@@ -180,6 +199,10 @@ button:disabled {
 
   h1 {
     font-size: 22px;
+  }
+
+  .count {
+    font-size: 14px;
   }
 }
 
@@ -292,4 +315,5 @@ button:disabled {
     width: 100%;
   }
 }
+
 
