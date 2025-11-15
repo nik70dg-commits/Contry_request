@@ -252,11 +252,44 @@ button:disabled {
   border: 1px solid #4CAF50;
 }
 
-.custom-btn {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  font-size: 17px;
-  background: #444;
-  border-radius: 10px;
+/* Richiesta personalizzata */
+#custom-request-box {
+  margin: 10px 0 15px;
+  display: flex;
+  gap: 8px;
 }
+
+#custom-request-box input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: none;
+  background: #333;
+  color: #fff;
+}
+
+#custom-request-box button {
+  padding: 10px 16px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: none;
+  background: #28a745;
+  color: white;
+  cursor: pointer;
+}
+
+#custom-request-box button:hover {
+  background: #34c759;
+}
+
+@media (max-width: 600px) {
+  #custom-request-box {
+    flex-direction: column;
+  }
+
+  #custom-request-box button {
+    width: 100%;
+  }
+}
+
