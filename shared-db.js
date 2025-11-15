@@ -1,85 +1,251 @@
-// shared-db.js - Logica condivisa per caricare i dati
+import { supabase } from './supabase.js';
 
-async function loadSongsData(supabaseClient) {
-  console.log('🔄 Loading songs data...');
+const container = document.getElementById('song-list');
+const searchInput = document.getElementById('search');
+const customForm = document.getElementById('custom-form');
+const customTitleInput = document.getElementById('custom-title');
+
+// Stato locale
+let myRequested = JSON.parse(localStorage.getItem("my_requested_songs") || "[]");
+let myCustomRequested = JSON.parse(localStorage.getItem("my_custom_requested") || "[]");
+let currentSongs = [];
+let customRequests = [];
+let hiddenIds = [];
+let lastCustomRequestId = null; // Per evidenziare l'ultima richiesta
+
+// Configurazione
+const MAX_REQUESTS_PER_USER = 50;
+
+// ====== FORM RICHIESTA CUSTOM ======
+customForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
   
-  try {
-    // 1. Prendi TUTTE le canzoni nascoste
-    const { data: hiddenData, error: hiddenError } = await supabaseClient
-      .from('hidden_songs')
-      .select('song_id');
-    
-    if (hiddenError) {
-      console.error('❌ Errore hidden_songs:', hiddenError);
-    }
-    
-    const hiddenIds = (hiddenData || []).map(h => h.song_id);
-    console.log('🚫 Hidden IDs:', hiddenIds);
-
-    // 2. Prendi TUTTE le canzoni
-    const { data: allSongs, error: songsError } = await supabaseClient
-      .from('songs')
-      .select('id, title, artist')
-      .order('title', { ascending: true });
-
-    if (songsError) {
-      console.error('❌ Errore songs:', songsError);
-      throw songsError;
-    }
-
-    console.log('📀 Canzoni totali nel DB:', allSongs?.length || 0);
-
-    // 3. Prendi TUTTE le richieste (SOLO id e song_id)
-    const { data: allRequests, error: requestsError } = await supabaseClient
-      .from('requests')
-      .select('id, song_id');
-
-    if (requestsError) {
-      console.error('❌ Errore requests:', requestsError);
-      throw requestsError;
-    }
-
-    console.log('📝 Richieste totali nel DB:', allRequests?.length || 0);
-    
-    if (allRequests && allRequests.length > 0) {
-      console.log('📋 Prime 3 richieste:', allRequests.slice(0, 3));
-    }
-
-    // 4. Conta le richieste per ogni canzone
-    const requestCounts = {};
-    (allRequests || []).forEach(req => {
-      if (req.song_id) {
-        requestCounts[req.song_id] = (requestCounts[req.song_id] || 0) + 1;
-      }
-    });
-
-    console.log('📊 Request counts:', requestCounts);
-
-    // 5. Combina i dati
-    const songsWithCounts = (allSongs || []).map(song => ({
-      ...song,
-      requests: requestCounts[song.id] || 0
-    }));
-
-    console.log('✅ Canzoni con conteggi:', songsWithCounts.length);
-    
-    // Log canzoni con richieste > 0
-    const songsWithRequests = songsWithCounts.filter(s => s.requests > 0);
-    console.log('🎵 Canzoni con richieste:', songsWithRequests.length);
-    if (songsWithRequests.length > 0) {
-      console.log('🎵 Top 5 richieste:', songsWithRequests.slice(0, 5).map(s => `${s.title} (${s.requests})`));
-    }
-
-    return {
-      allSongs: songsWithCounts,
-      hiddenIds,
-      totalRequests: allRequests?.length || 0
-    };
-  } catch (error) {
-    console.error('❌ Errore loadSongsData:', error);
-    throw error;
+  const title = customTitleInput.value.trim();
+  
+  if (!title) {
+    customTitleInput.focus();
+    return;
   }
+
+  // Controlla limite richieste
+  const totalRequests = myRequested.length + myCustomRequested.length;
+  if (totalRequests >= MAX_REQUESTS_PER_USER) {
+    customTitleInput.value = '';
+    alert(`Hai raggiunto il limite massimo di ${MAX_REQUESTS_PER_USER} richieste.`);
+    return;
+  }
+
+  console.log('📝 Inviando richiesta custom:', title);
+
+  try {
+    const submitBtn = customForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳';
+
+    // Inserisci richiesta con song_id NULL e solo titolo custom
+    const { data, error } = await supabase
+      .from('requests')
+      .insert([{
+        song_id: null,
+        custom_title: title,
+        custom_artist: null
+      }])
+      .select();
+
+    if (error) throw error;
+
+    console.log('✅ Richiesta custom inviata:', data);
+    
+    // Salva in locale e memorizza ID per evidenziare
+    const requestId = data[0].id;
+    lastCustomRequestId = requestId;
+    myCustomRequested.push(`custom_${requestId}`);
+    localStorage.setItem("my_custom_requested", JSON.stringify(myCustomRequested));
+    
+    // Reset form
+    customTitleInput.value = '';
+    
+    submitBtn.disabled = false;
+    submitBtn.textContent = '➕ Richiedi';
+    
+    // Ricarica e mostra evidenziata
+    setTimeout(() => {
+      loadSongs();
+      // Rimuovi evidenziazione dopo 5 secondi
+      setTimeout(() => {
+        lastCustomRequestId = null;
+        renderSongs();
+      }, 5000);
+    }, 200);
+
+  } catch (error) {
+    console.error('❌ Errore invio richiesta:', error);
+    customTitleInput.value = '';
+    
+    const submitBtn = customForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = false;
+    submitBtn.textContent = '➕ Richiedi';
+  }
+});
+
+// ====== CARICAMENTO CANZONI E RICHIESTE CUSTOM ======
+async function loadSongs() {
+  // 1. Carica canzoni nascoste
+  const { data: hiddenData } = await supabase.from('hidden_songs').select('*');
+  hiddenIds = hiddenData.map(h => h.song_id);
+
+  // 2. Carica canzoni normali con conteggio
+  const { data: songsData, error } = await supabase
+    .from('song_counts')
+    .select('*')
+    .order('requests', { ascending: false })
+    .order('title', { ascending: true });
+
+  if (error) {
+    console.error('Errore caricamento canzoni:', error);
+    return;
+  }
+
+  currentSongs = songsData.filter(s => !hiddenIds.includes(s.id));
+
+  // 3. Carica richieste custom (song_id NULL)
+  const { data: customData, error: customError } = await supabase
+    .from('requests')
+    .select('id, custom_title, custom_artist')
+    .is('song_id', null)
+    .order('id', { ascending: false });
+
+  if (customError) {
+    console.error('Errore caricamento richieste custom:', customError);
+  }
+
+  customRequests = customData || [];
+  console.log('✨ Richieste custom:', customRequests.length);
+
+  renderSongs();
 }
 
-// Esporta per uso globale
-window.loadSongsData = loadSongsData;
+function renderSongs() {
+  const searchTerm = searchInput.value.toLowerCase();
+  
+  let html = '';
+
+  // 1. MOSTRA RICHIESTE CUSTOM IN CIMA (colore diverso, evidenziazione se nuova)
+  if (customRequests.length > 0) {
+    const filteredCustom = customRequests.filter(c => 
+      c.custom_title.toLowerCase().includes(searchTerm)
+    );
+
+    if (filteredCustom.length > 0) {
+      filteredCustom.forEach(c => {
+        const isNew = lastCustomRequestId === c.id;
+        const requestedByMe = myCustomRequested.includes(`custom_${c.id}`);
+
+        html += `
+          <div class="song custom-request ${isNew ? 'highlight' : ''} ${requestedByMe ? 'requested-user' : ''}">
+            <div>
+              <strong>✨ ${c.custom_title}</strong>
+              <span class="custom-badge">Richiesta personalizzata</span>
+            </div>
+            <div>
+              <span class="custom-label">IN CODA</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+  }
+
+  // 2. MOSTRA CANZONI NORMALI
+  const filtered = currentSongs.filter(
+    s => s.title.toLowerCase().includes(searchTerm) ||
+         (s.artist && s.artist.toLowerCase().includes(searchTerm))
+  );
+
+  html += filtered.map(s => {
+    const requestedByUser = myRequested.includes(s.id);
+    const requestedByOthers = s.requests > 0;
+    
+    let cssClass = "";
+    if (requestedByUser) cssClass = "requested-user";
+    else if (requestedByOthers) cssClass = "requested-others";
+
+    return `
+      <div class="song ${cssClass}">
+        <div><strong>${s.title}</strong>${s.artist ? ' – ' + s.artist : ''}</div>
+        <div>
+          <button data-id="${s.id}">Richiedi</button>
+          <span class="count">(${s.requests})</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (!html) {
+    container.innerHTML = '<p class="empty">Nessuna canzone trovata</p>';
+    return;
+  }
+
+  container.innerHTML = html;
+
+  // Event listeners per richieste normali
+  container.querySelectorAll('button[data-id]').forEach(btn => {
+    btn.onclick = () => {
+      const id = parseInt(btn.dataset.id);
+      requestSong(id, btn);
+    };
+  });
+}
+
+async function requestSong(songId, button) {
+  const totalRequests = myRequested.length + myCustomRequested.length;
+  if (totalRequests >= MAX_REQUESTS_PER_USER) {
+    alert(`Hai raggiunto il limite massimo di ${MAX_REQUESTS_PER_USER} richieste.`);
+    return;
+  }
+
+  button.disabled = true;
+  const { error } = await supabase.from('requests').insert([{ song_id: songId }]);
+  button.disabled = false;
+
+  if (error) {
+    console.error("Errore richiesta:", error);
+    return;
+  }
+
+  myRequested.push(songId);
+  localStorage.setItem("my_requested_songs", JSON.stringify(myRequested));
+  loadSongs();
+}
+
+// Ricerca live
+searchInput.addEventListener('input', renderSongs);
+
+// REALTIME
+const requestsChannel = supabase
+  .channel('realtime-requests')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'requests' },
+    payload => {
+      console.log("📡 Realtime event:", payload.eventType);
+      if (payload.eventType === 'DELETE') {
+        console.log("🧽 RESET DJ — pulizia stato locale");
+        myRequested = [];
+        myCustomRequested = [];
+        lastCustomRequestId = null;
+        localStorage.removeItem("my_requested_songs");
+        localStorage.removeItem("my_custom_requested");
+      }
+      loadSongs();
+    }
+  )
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'hidden_songs' },
+    () => loadSongs()
+  )
+  .subscribe();
+
+// Inizializza
+loadSongs();
