@@ -94,21 +94,22 @@ async function requestSong(songId, button) {
 // =======================
 // RICHIESTA PERSONALIZZATA
 // =======================
-customBtn.addEventListener('click', sendCustomRequest);
+const customBox = document.getElementById('custom-request-box'); // contenitore visivo delle richieste
+const customList = document.createElement('div');
+customBox.appendChild(customList);
 
-customInput.addEventListener('keypress', e => {
+customBtn.addEventListener('click', sendCustomRequest);
+customInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') sendCustomRequest();
 });
 
 async function sendCustomRequest() {
   const text = customInput.value.trim();
-
   if (!text) return;
   if (text.length < 2) {
     alert("Inserisci almeno 2 caratteri.");
     return;
   }
-
   if (myRequested.length >= MAX_REQUESTS_PER_USER) {
     alert(`Hai raggiunto il limite massimo di ${MAX_REQUESTS_PER_USER} richieste.`);
     return;
@@ -116,10 +117,7 @@ async function sendCustomRequest() {
 
   customBtn.disabled = true;
 
-  const { error } = await supabase
-    .from('custom_requests')
-    .insert([{ text }]);
-
+  const { error } = await supabase.from('custom_requests').insert([{ text }]);
   customBtn.disabled = false;
 
   if (error) {
@@ -128,13 +126,38 @@ async function sendCustomRequest() {
     return;
   }
 
-  // salva come richiesta utente
+  // Salva richiesta utente
   myRequested.push("custom_" + Date.now());
   localStorage.setItem("my_requested_songs", JSON.stringify(myRequested));
 
   customInput.value = "";
   alert("Richiesta inviata!");
+
+  await loadCustomRequests(); // aggiorna subito la lista
 }
+
+async function loadCustomRequests() {
+  const { data, error } = await supabase
+    .from('custom_requests')
+    .select('*')
+    .order('id', { ascending: false });
+
+  if (error) return console.error("Errore caricamento richieste personalizzate:", error);
+
+  if (!data || data.length === 0) {
+    customList.innerHTML = '<i>Nessuna richiesta personalizzata</i>';
+  } else {
+    customList.innerHTML = data.map(r => `<div>🎵 ${r.text}</div>`).join('');
+  }
+}
+
+// Realtime aggiornamento richieste personalizzate
+supabase.channel('realtime-requests')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_requests' }, () => loadCustomRequests())
+  .subscribe();
+
+// Caricamento iniziale
+loadCustomRequests();
 
 // ====== REALTIME ======
 supabase
@@ -159,3 +182,4 @@ supabase
 
 // Caricamento iniziale
 loadSongs();
+
