@@ -10,7 +10,7 @@ let currentSongs = [];
 let hiddenIds = [];
 
 // CONFIG
-const MAX_REQUESTS_PER_USER = 6;
+const MAX_REQUESTS_PER_USER = 12;
 
 // --------------------
 // FUNZIONI PRINCIPALI
@@ -148,3 +148,4 @@ searchInput.addEventListener('input', renderSongs);
 // INIT
 // --------------------
 loadSongs();
+
