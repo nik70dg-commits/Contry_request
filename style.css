@@ -315,7 +315,7 @@ button:disabled {
     width: 100%;
   }
 }
-/* Form richiesta custom inline */
+/* Form richiesta custom inline - SENZA ARTISTA */
 .custom-request-form {
   margin-top: 20px;
   padding: 20px;
@@ -326,13 +326,12 @@ button:disabled {
 
 #custom-form {
   display: grid;
-  grid-template-columns: 2fr 1fr auto;
+  grid-template-columns: 1fr auto;
   gap: 10px;
   align-items: center;
 }
 
-#custom-title,
-#custom-artist {
+#custom-title {
   padding: 12px 15px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
@@ -340,8 +339,7 @@ button:disabled {
   transition: border 0.3s;
 }
 
-#custom-title:focus,
-#custom-artist:focus {
+#custom-title:focus {
   outline: none;
   border-color: #f5576c;
   background: white;
@@ -353,7 +351,7 @@ button:disabled {
 }
 
 .quick-submit {
-  padding: 12px 20px;
+  padding: 12px 25px;
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   color: white;
   border: none;
@@ -377,28 +375,70 @@ button:disabled {
   box-shadow: none;
 }
 
-/* Animazione evidenziazione per nuova richiesta */
+/* Stile richieste custom nell'elenco */
+.song.custom-request {
+  background: linear-gradient(to right, rgba(245, 87, 108, 0.15), transparent);
+  border-left: 4px solid #f5576c;
+  position: relative;
+}
+
+.song.custom-request strong {
+  color: #f5576c;
+}
+
+.custom-badge {
+  display: inline-block;
+  background: #f5576c;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  margin-left: 10px;
+  font-weight: bold;
+}
+
+.custom-label {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+/* Animazione evidenziazione per nuova richiesta custom */
 @keyframes highlightPulse {
   0%, 100% {
     background: linear-gradient(to right, rgba(245, 87, 108, 0.3), transparent);
     box-shadow: 0 0 20px rgba(245, 87, 108, 0.5);
+    transform: scale(1);
   }
   50% {
     background: linear-gradient(to right, rgba(245, 87, 108, 0.5), transparent);
     box-shadow: 0 0 30px rgba(245, 87, 108, 0.7);
+    transform: scale(1.02);
   }
 }
 
 .song.custom-request.highlight {
   animation: highlightPulse 1.5s ease-in-out 3;
-  border-left: 4px solid #f5576c;
+}
+
+/* Evidenziazione per richieste dell'utente */
+.song.custom-request.requested-user {
+  background: linear-gradient(to right, rgba(102, 126, 234, 0.2), rgba(245, 87, 108, 0.15));
+  border-left: 4px solid #667eea;
+}
+
+.song.custom-request.requested-user strong {
+  color: #667eea;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   #custom-form {
     grid-template-columns: 1fr;
-    gap: 10px;
   }
   
   .quick-submit {
