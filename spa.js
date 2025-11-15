@@ -66,8 +66,7 @@ customForm.addEventListener('submit', async (e) => {
     
     // Reset form
     customTitleInput.value = '';
-    customArtistInput.value = '';
-    
+       
     submitBtn.disabled = false;
     submitBtn.textContent = '➕ Richiedi';
     
@@ -198,3 +197,4 @@ const requestsChannel = supabase
 
 // Inizializza
 loadSongs();
+
