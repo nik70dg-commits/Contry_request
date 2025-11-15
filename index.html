@@ -11,20 +11,27 @@
     <header>
       <h1>🎵 Richieste DJ</h1>
       <input type="text" id="search" placeholder="Cerca canzone o artista...">
-<div id="custom-request-box">
-  <input type="text" id="custom-request" placeholder="Non trovi una canzone? Scrivila qui...">
-  <button id="custom-request-btn">Invia</button>
-</div>
-
+      <button id="custom-request-btn" class="custom-btn">➕ Richiedi canzone non in lista</button>
     </header>
     
     <div id="song-list">Caricamento...</div>
   </div>
 
-  <!-- Carica Supabase da CDN -->
-<script type="module" src="spa.js"></script>
+  <!-- Modal per richieste custom -->
+  <div id="custom-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>🎵 Richiedi una canzone</h2>
+      <p>Non trovi la canzone? Richiedila direttamente al DJ!</p>
+      
+      <form id="custom-form">
+        <input type="text" id="custom-title" placeholder="Titolo canzone *" required>
+        <input type="text" id="custom-artist" placeholder="Artista">
+        <button type="submit" class="submit-btn">📤 Invia richiesta al DJ</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="spa.js"></script>
 </body>
-
 </html>
-
-
