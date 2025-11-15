@@ -2,8 +2,6 @@ import { supabase } from './supabase.js';
 
 const container = document.getElementById('song-list');
 const searchInput = document.getElementById('search');
-
-// FORM richiesta personalizzata
 const customInput = document.getElementById('custom-request');
 const customBtn = document.getElementById('custom-request-btn');
 
@@ -17,10 +15,13 @@ let hiddenIds = [];
 const MAX_REQUESTS_PER_USER = 6;   // Limite richieste per IP/utente
 // ============================
 
+// ===== CARICAMENTO CANZONI =====
 async function loadSongs() {
+  // Canzoni nascoste
   const { data: hiddenData } = await supabase.from('hidden_songs').select('*');
   hiddenIds = hiddenData.map(h => h.song_id);
 
+  // Lista canzoni con conteggio
   const { data: songsData, error } = await supabase
     .from('song_counts')
     .select('*')
@@ -32,10 +33,32 @@ async function loadSongs() {
     return;
   }
 
-  currentSongs = songsData.filter(s => !hiddenIds.includes(s.id));
+  // Richieste personalizzate
+  const { data: customData, error: customError } = await supabase
+    .from('custom_requests')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (customError) console.error('Errore caricamento richieste personalizzate:', customError);
+
+  const customSongs = (customData || []).map(r => ({
+    id: 'custom_' + r.id,
+    title: r.text,
+    artist: '',
+    requests: 1,
+    isCustom: true
+  }));
+
+  // Filtra canzoni nascoste
+  const normalSongs = (songsData || []).filter(s => !hiddenIds.includes(s.id));
+
+  // Combina richieste personalizzate + canzoni normali
+  currentSongs = [...customSongs, ...normalSongs];
+
   renderSongs();
 }
 
+// ===== RENDER CANZONI =====
 function renderSongs() {
   const term = searchInput.value.toLowerCase();
 
@@ -46,15 +69,18 @@ function renderSongs() {
 
   container.innerHTML = filtered.map(s => {
     const requestedByUser = myRequested.includes(s.id);
-    const requestedByOthers = s.requests > 0;
+    const requestedByOthers = !requestedByUser && s.requests > 0;
 
-    let cssClass = "";
-    if (requestedByUser) cssClass = "requested-user";
-    else if (requestedByOthers) cssClass = "requested-others";
+    let cssClass = '';
+    if (requestedByUser) cssClass = 'requested-user';
+    else if (requestedByOthers) cssClass = 'requested-others';
+    if (s.isCustom) cssClass += ' custom-request';
 
     return `
       <div class="song ${cssClass}">
-        <div><strong>${s.title}</strong>${s.artist ? ' – ' + s.artist : ''}</div>
+        <div>
+          <strong>${s.title}</strong>${s.artist ? ' – ' + s.artist : ''}${s.isCustom ? ' (Richiesta personalizzata)' : ''}
+        </div>
         <div>
           <button data-id="${s.id}">Richiedi</button>
           <span class="count">(${s.requests})</span>
@@ -64,12 +90,11 @@ function renderSongs() {
   }).join('');
 
   container.querySelectorAll('button[data-id]').forEach(btn => {
-    btn.onclick = () => {
-      requestSong(btn.dataset.id, btn);
-    };
+    btn.onclick = () => requestSong(btn.dataset.id, btn);
   });
 }
 
+// ===== RICHIESTA CANZONE =====
 async function requestSong(songId, button) {
   if (myRequested.length >= MAX_REQUESTS_PER_USER) {
     alert(`Hai raggiunto il limite massimo di ${MAX_REQUESTS_PER_USER} richieste.`);
@@ -78,38 +103,39 @@ async function requestSong(songId, button) {
 
   button.disabled = true;
 
-  const { error } = await supabase
-    .from('requests')
-    .insert([{ song_id: songId }]);
+  // Se è richiesta personalizzata, salva comunque nella tabella 'requests'
+  let payload = {};
+  if (songId.toString().startsWith('custom_')) {
+    payload = { song_id: null, custom_id: parseInt(songId.replace('custom_', '')) };
+  } else {
+    payload = { song_id: parseInt(songId) };
+  }
+
+  const { error } = await supabase.from('requests').insert([payload]);
 
   button.disabled = false;
 
-  if (!error) {
-    myRequested.push(parseInt(songId));
-    localStorage.setItem("my_requested_songs", JSON.stringify(myRequested));
-    loadSongs();
+  if (error) {
+    console.error("Errore richiesta:", error);
+    return;
   }
+
+  myRequested.push(songId);
+  localStorage.setItem("my_requested_songs", JSON.stringify(myRequested));
+
+  loadSongs();
 }
 
-// =======================
-// RICHIESTA PERSONALIZZATA
-// =======================
-const customBox = document.getElementById('custom-request-box'); // contenitore visivo delle richieste
-const customList = document.createElement('div');
-customBox.appendChild(customList);
-
+// ===== RICHIESTA PERSONALIZZATA =====
 customBtn.addEventListener('click', sendCustomRequest);
-customInput.addEventListener('keydown', e => {
+customInput.addEventListener('keypress', e => {
   if (e.key === 'Enter') sendCustomRequest();
 });
 
 async function sendCustomRequest() {
   const text = customInput.value.trim();
-  if (!text) return;
-  if (text.length < 2) {
-    alert("Inserisci almeno 2 caratteri.");
-    return;
-  }
+  if (!text || text.length < 2) return alert("Inserisci almeno 2 caratteri.");
+
   if (myRequested.length >= MAX_REQUESTS_PER_USER) {
     alert(`Hai raggiunto il limite massimo di ${MAX_REQUESTS_PER_USER} richieste.`);
     return;
@@ -117,7 +143,8 @@ async function sendCustomRequest() {
 
   customBtn.disabled = true;
 
-  const { error } = await supabase.from('custom_requests').insert([{ text }]);
+  const { data, error } = await supabase.from('custom_requests').insert([{ text }]);
+
   customBtn.disabled = false;
 
   if (error) {
@@ -126,60 +153,26 @@ async function sendCustomRequest() {
     return;
   }
 
-  // Salva richiesta utente
-  myRequested.push("custom_" + Date.now());
+  // salva come richiesta utente
+  myRequested.push("custom_" + data[0].id);
   localStorage.setItem("my_requested_songs", JSON.stringify(myRequested));
 
   customInput.value = "";
-  alert("Richiesta inviata!");
-
-  await loadCustomRequests(); // aggiorna subito la lista
+  loadSongs();
 }
 
-async function loadCustomRequests() {
-  const { data, error } = await supabase
-    .from('custom_requests')
-    .select('*')
-    .order('id', { ascending: false });
-
-  if (error) return console.error("Errore caricamento richieste personalizzate:", error);
-
-  if (!data || data.length === 0) {
-    customList.innerHTML = '<i>Nessuna richiesta personalizzata</i>';
-  } else {
-    customList.innerHTML = data.map(r => `<div>🎵 ${r.text}</div>`).join('');
-  }
-}
-
-// Realtime aggiornamento richieste personalizzate
-supabase.channel('realtime-requests')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_requests' }, () => loadCustomRequests())
-  .subscribe();
-
-// Caricamento iniziale
-loadCustomRequests();
-
-// ====== REALTIME ======
+// ===== REALTIME =====
 supabase
   .channel('realtime-requests')
-  .on(
-    'postgres_changes',
-    { event: '*', schema: 'public', table: 'requests' },
-    payload => {
-      if (payload.eventType === 'DELETE') {
-        localStorage.removeItem("my_requested_songs");
-        myRequested = [];
-      }
-      loadSongs();
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, payload => {
+    if (payload.eventType === 'DELETE') {
+      myRequested = [];
+      localStorage.removeItem("my_requested_songs");
     }
-  )
-  .on(
-    'postgres_changes',
-    { event: '*', schema: 'public', table: 'custom_requests' },
-    () => console.log("Nuova richiesta personalizzata arrivata!")
-  )
+    loadSongs();
+  })
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_requests' }, () => loadSongs())
   .subscribe();
 
-// Caricamento iniziale
+// ===== INIT =====
 loadSongs();
-
