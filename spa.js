@@ -10,7 +10,7 @@ let currentSongs = [];
 let hiddenIds = [];
 
 // ====== CONFIGURAZIONE ======
-const MAX_REQUESTS_PER_USER = 3;   // Limite richieste per IP/utente
+const MAX_REQUESTS_PER_USER = 50;   // Limite richieste per IP/utente
 // ============================
 
 async function loadSongs() {
@@ -124,3 +124,4 @@ const requestsChannel = supabase
 
 // Caricamento iniziale
 loadSongs();
+
