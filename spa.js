@@ -178,9 +178,13 @@ function renderSongs() {
     const requestedByUser = myRequested.includes(s.id);
     const requestedByOthers = s.requests > 0;
     
-let cssClass = "";
-if (requestedByUser) cssClass = "requested-user";
-else if (requestedByOthers) cssClass = "requested-others";
+let cssClass = '';
+
+if (requestedByUser) {
+  cssClass = 'requested-user';
+} else if (requestedByOthers) {
+  cssClass = 'requested-others';
+}
 
     return `
       <div class="song ${cssClass}">
@@ -257,7 +261,7 @@ if (
   localStorage.removeItem("my_custom_requested");
 
   // 🔥 QUESTO È IL PEZZO CHIAVE
-  container.innerHTML = '';
+  container.replaceChildren();
 }
       loadSongs();
     }
@@ -280,6 +284,7 @@ if (
 // Inizializza
 console.log('🚀 Initializing public page...');
 loadSongs();
+
 
 
 
