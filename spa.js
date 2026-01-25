@@ -178,9 +178,9 @@ function renderSongs() {
     const requestedByUser = myRequested.includes(s.id);
     const requestedByOthers = s.requests > 0;
     
-    let cssClass = "";
-    if (requestedByUser) cssClass = "requested-user";
-    else if (requestedByOthers) cssClass = "requested-others";
+let classes = ['song'];
+if (requestedByUser) classes.push('requested-user');
+else if (requestedByOthers) classes.push('requested-others');
 
     return `
       <div class="song ${cssClass}">
@@ -280,5 +280,6 @@ if (
 // Inizializza
 console.log('🚀 Initializing public page...');
 loadSongs();
+
 
 
