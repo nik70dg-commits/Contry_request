@@ -247,7 +247,7 @@ if (
   payload.eventType === 'DELETE' &&
   (!payload.old || payload.old.id === undefined)
 ) {
-  console.log("🧽 RESET DJ globale — pulizia totale cache client");
+  console.log("🧽 RESET DJ globale — reset DOM + cache");
 
   myRequested = [];
   myCustomRequested = [];
@@ -256,8 +256,8 @@ if (
   localStorage.removeItem("my_requested_songs");
   localStorage.removeItem("my_custom_requested");
 
-  // opzionale ma consigliato: reset UI immediato
-  container.innerHTML = '<i>Reset in corso…</i>';
+  // 🔥 QUESTO È IL PEZZO CHIAVE
+  container.innerHTML = '';
 }
       loadSongs();
     }
@@ -280,4 +280,5 @@ if (
 // Inizializza
 console.log('🚀 Initializing public page...');
 loadSongs();
+
 
