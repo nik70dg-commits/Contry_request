@@ -243,14 +243,22 @@ const requestsChannel = supabase
     { event: '*', schema: 'public', table: 'requests' },
     payload => {
       console.log("📡 Realtime event:", payload.eventType, payload);
-      if (payload.eventType === 'DELETE') {
-        console.log("🧽 RESET DJ — pulizia stato locale");
-        myRequested = [];
-        myCustomRequested = [];
-        lastCustomRequestId = null;
-        localStorage.removeItem("my_requested_songs");
-        localStorage.removeItem("my_custom_requested");
-      }
+if (
+  payload.eventType === 'DELETE' &&
+  (!payload.old || payload.old.id === undefined)
+) {
+  console.log("🧽 RESET DJ globale — pulizia totale cache client");
+
+  myRequested = [];
+  myCustomRequested = [];
+  lastCustomRequestId = null;
+
+  localStorage.removeItem("my_requested_songs");
+  localStorage.removeItem("my_custom_requested");
+
+  // opzionale ma consigliato: reset UI immediato
+  container.innerHTML = '<i>Reset in corso…</i>';
+}
       loadSongs();
     }
   )
@@ -272,3 +280,4 @@ const requestsChannel = supabase
 // Inizializza
 console.log('🚀 Initializing public page...');
 loadSongs();
+
