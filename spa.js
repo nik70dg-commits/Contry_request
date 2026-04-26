@@ -9,7 +9,7 @@ const customTitleInput = document.getElementById('custom-title');
 let myRequested = JSON.parse(localStorage.getItem("my_requested_songs") || "[]");
 let myCustomRequested = JSON.parse(localStorage.getItem("my_custom_requested") || "[]");
 let currentSongs = [];
-let customRequests = []; // AGGIUNTO: array per richieste custom
+let customRequests = [];
 let hiddenIds = [];
 let lastCustomRequestId = null;
 
@@ -27,7 +27,6 @@ customForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  // Controlla limite richieste
   const totalRequests = myRequested.length + myCustomRequested.length;
   if (totalRequests >= MAX_REQUESTS_PER_USER) {
     customTitleInput.value = '';
@@ -42,7 +41,6 @@ customForm.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
     submitBtn.textContent = '⏳';
 
-    // Inserisci richiesta con song_id NULL e solo titolo custom
     const { data, error } = await supabase
       .from('requests')
       .insert([{
@@ -55,22 +53,18 @@ customForm.addEventListener('submit', async (e) => {
 
     console.log('✅ Richiesta custom inviata:', data);
     
-    // Salva in locale e memorizza ID per evidenziare
     const requestId = data[0].id;
     lastCustomRequestId = requestId;
     myCustomRequested.push(`custom_${requestId}`);
     localStorage.setItem("my_custom_requested", JSON.stringify(myCustomRequested));
     
-    // Reset form
     customTitleInput.value = '';
     
     submitBtn.disabled = false;
     submitBtn.textContent = '➕ Richiedi';
     
-    // Ricarica e mostra evidenziata
     setTimeout(() => {
       loadSongs();
-      // Rimuovi evidenziazione dopo 5 secondi
       setTimeout(() => {
         lastCustomRequestId = null;
         renderSongs();
@@ -127,6 +121,35 @@ async function loadSongs() {
       }
     }
 
+    // 🔑 PUNTO CHIAVE: Pulisci la cache locale se non ci sono più richieste nel DB
+    const { data: allRequests } = await supabase
+      .from('requests')
+      .select('id, song_id');
+    
+    if (!allRequests || allRequests.length === 0) {
+      console.log('🧹 Nessuna richiesta nel DB - pulisco cache locale');
+      myRequested = [];
+      myCustomRequested = [];
+      localStorage.removeItem("my_requested_songs");
+      localStorage.removeItem("my_custom_requested");
+    } else {
+      // Rimuovi dalla cache locale le richieste che non esistono più nel DB
+      const dbRequestIds = allRequests
+        .filter(r => r.song_id !== null)
+        .map(r => r.song_id);
+      
+      const dbCustomIds = allRequests
+        .filter(r => r.song_id === null)
+        .map(r => `custom_${r.id}`);
+      
+      // Filtra solo le richieste che esistono ancora nel DB
+      myRequested = myRequested.filter(id => dbRequestIds.includes(id));
+      myCustomRequested = myCustomRequested.filter(id => dbCustomIds.includes(id));
+      
+      localStorage.setItem("my_requested_songs", JSON.stringify(myRequested));
+      localStorage.setItem("my_custom_requested", JSON.stringify(myCustomRequested));
+    }
+
     renderSongs();
   } catch (error) {
     console.error('❌ Errore generale loadSongs:', error);
@@ -138,7 +161,7 @@ function renderSongs() {
   
   let html = '';
 
-  // 1. MOSTRA RICHIESTE CUSTOM IN CIMA (colore diverso, evidenziazione se nuova)
+  // 1. MOSTRA RICHIESTE CUSTOM IN CIMA
   if (customRequests.length > 0) {
     console.log('Rendering custom requests:', customRequests.length);
     
@@ -178,13 +201,12 @@ function renderSongs() {
     const requestedByUser = myRequested.includes(s.id);
     const requestedByOthers = s.requests > 0;
     
-let cssClass = '';
-
-if (requestedByUser) {
-  cssClass = 'requested-user';
-} else if (requestedByOthers) {
-  cssClass = 'requested-others';
-}
+    let cssClass = '';
+    if (requestedByUser) {
+      cssClass = 'requested-user';
+    } else if (requestedByOthers) {
+      cssClass = 'requested-others';
+    }
 
     return `
       <div class="song ${cssClass}">
@@ -247,22 +269,8 @@ const requestsChannel = supabase
     { event: '*', schema: 'public', table: 'requests' },
     payload => {
       console.log("📡 Realtime event:", payload.eventType, payload);
-if (
-  payload.eventType === 'DELETE' &&
-  (!payload.old || payload.old.id === undefined)
-) {
-  console.log("🧽 RESET DJ globale — reset DOM + cache");
-
-  myRequested = [];
-  myCustomRequested = [];
-  lastCustomRequestId = null;
-
-  localStorage.removeItem("my_requested_songs");
-  localStorage.removeItem("my_custom_requested");
-
-  // 🔥 QUESTO È IL PEZZO CHIAVE
-  container.replaceChildren();
-}
+      
+      // Ricarica sempre dopo qualsiasi modifica
       loadSongs();
     }
   )
@@ -284,8 +292,3 @@ if (
 // Inizializza
 console.log('🚀 Initializing public page...');
 loadSongs();
-
-
-
-
-
